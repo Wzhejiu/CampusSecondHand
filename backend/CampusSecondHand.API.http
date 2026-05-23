@@ -1,0 +1,6 @@
+@CampusSecondHand.API_HostAddress = http://localhost:5153
+
+GET {{CampusSecondHand.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
