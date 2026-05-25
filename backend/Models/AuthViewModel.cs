@@ -12,7 +12,7 @@ namespace CampusSecondHand.API.Models
         public string Password { get; set; }
     }
 
-    // 注册请求
+    // 注册请求（去掉 Email，保持与数据库字段匹配）
     public class RegisterRequest
     {
         [Required]
@@ -25,8 +25,6 @@ namespace CampusSecondHand.API.Models
 
         [Compare("Password")]
         public string ConfirmPassword { get; set; }
-
-        public string Email { get; set; }
 
         public string Phone { get; set; }
     }
