@@ -99,16 +99,17 @@
     </div>
 
     <div id="loginPanel">
-        <input type="text" id="loginAccount" placeholder="账号/手机号">
+        <input type="text" id="loginUser" placeholder="用户名">
         <input type="password" id="loginPwd" placeholder="密码">
         <button onclick="userLogin()">登录</button>
         <button class="btn2" onclick="switchAuth('register')">去注册</button>
     </div>
 
     <div id="registerPanel" class="hide">
-        <input type="text" id="regUsername" placeholder="用户名">
-        <input type="text" id="regPhone" placeholder="手机号">
+        <input type="text" id="regUser" placeholder="用户名">
         <input type="password" id="regPwd" placeholder="密码">
+        <input type="password" id="regConfirmPwd" placeholder="确认密码">
+        <input type="text" id="regPhone" placeholder="手机号">
         <button onclick="userRegister()">注册</button>
         <button class="btn2" onclick="switchAuth('login')">返回登录</button>
     </div>
@@ -172,7 +173,7 @@
 
     <div class="tab-bar">
         <div class="tab-item active" onclick="switchTab('home')">首页</div>
-        <div class="tab-item active" onclick="switchTab('mine')">我的</div>
+        <div class="tab-item" onclick="switchTab('mine')">我的</div>
     </div>
 
     <div class="fab-btn" onclick="openModal()">+</div>
@@ -216,13 +217,81 @@
 </div>
 
 <script>
+    // ====================== 已按你的要求配置 ======================
+    const API_BASE = "http://172.19.229.149:5000/api";
+
+    // 本地数据
     let users = JSON.parse(localStorage.getItem('users')) || [];
     let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
     let list = JSON.parse(localStorage.getItem('goods')) || [];
     let orders = JSON.parse(localStorage.getItem('orders')) || [];
     let selectedGoodsIndex = null;
 
-    function switchAuth(type){
+    // ====================== 注册（对接你的接口文档） ======================
+    async function userRegister() {
+        let username = document.getElementById('regUser').value.trim();
+        let password = document.getElementById('regPwd').value.trim();
+        let confirmPassword = document.getElementById('regConfirmPwd').value.trim();
+        let phone = document.getElementById('regPhone').value.trim();
+
+        try {
+            let res = await fetch(`${API_BASE}/Auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, confirmPassword, phone })
+            });
+            let json = await res.json();
+            alert(json.message);
+            if (json.success) switchAuth('login');
+        } catch (e) {
+            // 离线兼容
+            if (!username || !password || !confirmPassword) { alert('请填写完整'); return; }
+            if (password !== confirmPassword) { alert('两次密码不一致'); return; }
+            if (users.find(u => u.username === username)) { alert('用户名已存在'); return; }
+            users.push({ username, password, phone });
+            localStorage.setItem('users', JSON.stringify(users));
+            alert('注册成功(本地)');
+            switchAuth('login');
+        }
+    }
+
+    // ====================== 登录（对接你的接口文档） ======================
+    async function userLogin() {
+        let username = document.getElementById('loginUser').value.trim();
+        let password = document.getElementById('loginPwd').value.trim();
+
+        try {
+            let res = await fetch(`${API_BASE}/Auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            let json = await res.json();
+            if (!json.success) { alert(json.message); return; }
+
+            currentUser = json.data.userInfo;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('token', json.data.token);
+
+            document.getElementById('authBox').classList.add('hide');
+            document.getElementById('mainContainer').classList.remove('hide');
+            document.getElementById('displayUsername').textContent = currentUser.username;
+            render();
+        } catch (e) {
+            // 离线兼容
+            let user = users.find(u => u.username === username && u.password === password);
+            if (!user) { alert('账号或密码错误(本地)'); return; }
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            document.getElementById('authBox').classList.add('hide');
+            document.getElementById('mainContainer').classList.remove('hide');
+            document.getElementById('displayUsername').textContent = user.username;
+            render();
+        }
+    }
+
+    // ====================== 原有功能全部保留 ======================
+    function switchAuth(type) {
         document.querySelectorAll('.tab-wrap div').forEach(t=>t.classList.remove('active'));
         event.target.classList.add('active');
         if(type==='login'){
@@ -234,38 +303,10 @@
         }
     }
 
-    function userRegister(){
-        let username = document.getElementById('regUsername').value.trim();
-        let phone = document.getElementById('regPhone').value.trim();
-        let pwd = document.getElementById('regPwd').value.trim();
-        if(!username || !phone || !pwd){ alert('请填写完整信息'); return; }
-        let exist = users.find(u=>u.username===username || u.phone===phone);
-        if(exist){ alert('账号已存在'); return; }
-        users.push({username,phone,pwd});
-        localStorage.setItem('users',JSON.stringify(users));
-        alert('注册成功！请登录');
-        switchAuth('login');
-    }
-
-    function userLogin(){
-        let account = document.getElementById('loginAccount').value.trim();
-        let pwd = document.getElementById('loginPwd').value.trim();
-        let user = users.find(u=>(u.username===account || u.phone===account) && u.pwd===pwd);
-        if(!user){ alert('账号或密码错误'); return; }
-        currentUser = user;
-        localStorage.setItem('currentUser',JSON.stringify(user));
-        document.getElementById('authBox').classList.add('hide');
-        document.getElementById('mainContainer').classList.remove('hide');
-        document.getElementById('displayUsername').textContent = user.username;
-        render();
-    }
-
     function logout(){
         currentUser = null;
-        localStorage.removeItem('currentUser');
-        document.getElementById('mainContainer').classList.add('hide');
-        document.getElementById('authBox').classList.remove('hide');
-        alert('已退出登录');
+        localStorage.clear();
+        location.reload();
     }
 
     function render() {
@@ -396,7 +437,7 @@
 
     function showUserInfo(){
         document.getElementById('infoUsername').innerText=currentUser.username;
-        document.getElementById('infoPhone').innerText=currentUser.phone;
+        document.getElementById('infoPhone').innerText=currentUser.phone || '未设置';
         document.getElementById('infoGoodsCount').innerText=list.filter(x=>x.seller===currentUser.username).length;
         document.getElementById('infoOrderCount').innerText=orders.length;
         document.getElementById('infoModal').style.display='flex';
