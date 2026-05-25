@@ -52,10 +52,9 @@
         .comment-item{background:#f8f9fa;padding:10px;margin:6px 0;border-radius:6px;}
         .comment-empty{color:#999;text-align:center;padding:10px;}
 
-        .del-btn{background:#e53935;color:white;font-size:12px;padding:4px 10px;margin-top:6px;}
         .order-item{background:#f7fcff;padding:12px;margin:8px 0;border-radius:6px;border-left:4px solid #0066cc;}
-        .comment-btn{background:#0066cc;color:white;margin:8px 0;}
         .buy-btn{background:#43a047;color:white;margin:12px 0;width:100%;padding:12px;}
+        .logout-btn{background:#ff5722;color:white;width:100%;margin-top:20px;}
 
         .fab-btn{
             position:fixed;bottom:80px;right:20px;
@@ -79,15 +78,6 @@
             justify-content:center;font-size:42px;margin:0 auto 12px;
             cursor:pointer;border:2px solid #ddd;
         }
-
-        .info-modal-overlay{
-            position:fixed;top:0;left:0;right:0;bottom:0;
-            background:rgba(0,0,0,0.5);display:none;
-            align-items:center;justify-content:center;z-index:1001;
-        }
-        .info-modal-content{background:white;padding:25px;border-radius:10px;width:90%;max-width:320px;text-align:center;}
-        .seller-name{color:#0066cc;cursor:pointer;text-decoration:underline;}
-        .logout-btn{background:#ff5722;color:white;width:100%;margin-top:20px;}
     </style>
 </head>
 <body>
@@ -117,27 +107,14 @@
 
 <div id="mainContainer" class="hide">
     <div id="homePage" class="page active">
-        <h2>📦 校园二手交易平台</h2>
+        <h2>📦 商品列表</h2>
         <div class="filter-bar">
-            <input type="text" id="searchInput" placeholder="搜索商品" oninput="render()">
-            <select id="filterSelect" onchange="render()">
+            <input type="text" id="search" placeholder="搜索" oninput="loadGoods()">
+            <select id="category" onchange="loadGoods()">
                 <option value="全部">全部分类</option>
                 <option value="教材教辅">教材教辅</option>
                 <option value="数码电子">数码电子</option>
                 <option value="生活用品">生活用品</option>
-                <option value="服饰鞋包">服饰鞋包</option>
-                <option value="运动器材">运动器材</option>
-                <option value="美妆护肤">美妆护肤</option>
-                <option value="宿舍家具">宿舍家具</option>
-                <option value="乐器文具">乐器文具</option>
-                <option value="交通出行">交通出行</option>
-                <option value="零食特产">零食特产</option>
-                <option value="其他物品">其他物品</option>
-            </select>
-            <select id="sortSelect" onchange="render()">
-                <option value="time">最新发布</option>
-                <option value="priceAsc">价格↑</option>
-                <option value="priceDesc">价格↓</option>
             </select>
         </div>
         <div id="goodsList"></div>
@@ -145,314 +122,215 @@
 
     <div id="detailPage" class="page">
         <h2>商品详情</h2>
-        <div id="detailContent"></div>
-        <div class="comment-box">
-            <h4>💬 留言区</h4>
-            <div id="commentList"></div>
-            <input type="text" id="commentInput" placeholder="发表留言...">
-            <button class="comment-btn" onclick="addComment()">发表</button>
-        </div>
+        <div id="detail"></div>
         <button class="buy-btn" onclick="buyGoods()">立即购买</button>
     </div>
 
     <div id="minePage" class="page">
         <h2>👤 个人中心</h2>
         <div class="profile-header">
-            <div class="avatar" onclick="showUserInfo()">👤</div>
-            <p id="displayUsername" style="font-size:18px;font-weight:bold;">用户</p>
+            <div class="avatar">👤</div>
+            <p id="nickname"></p>
         </div>
-
-        <div class="box" onclick="showMyGoods()">📦 我的发布</div>
-        <div id="myGoodsList" class="hide"></div>
-
-        <div class="box" onclick="showOrders()">🧾 我的订单</div>
-        <div id="orderList" class="hide"></div>
-
         <button class="logout-btn" onclick="logout()">退出登录</button>
     </div>
 
     <div class="tab-bar">
-        <div class="tab-item active" onclick="switchTab('home')">首页</div>
-        <div class="tab-item" onclick="switchTab('mine')">我的</div>
+        <div class="tab-item active" onclick="go('homePage')">首页</div>
+        <div class="tab-item" onclick="go('minePage')">我的</div>
     </div>
 
-    <div class="fab-btn" onclick="openModal()">+</div>
+    <div class="fab-btn" onclick="document.getElementById('publishModal').style.display='flex'">+</div>
 
     <div class="modal-overlay" id="publishModal">
         <div class="modal-content">
-            <h3>发布闲置</h3>
-            <input type="text" id="name" placeholder="商品名称"><br>
-            <input type="number" id="money" placeholder="价格（元）"><br>
-            <textarea id="desc" rows="3" placeholder="商品描述"></textarea><br>
-            <select id="category">
-                <option value="教材教辅">教材教辅</option>
-                <option value="数码电子">数码电子</option>
-                <option value="生活用品">生活用品</option>
-                <option value="服饰鞋包">服饰鞋包</option>
-                <option value="运动器材">运动器材</option>
-                <option value="美妆护肤">美妆护肤</option>
-                <option value="宿舍家具">宿舍家具</option>
-                <option value="乐器文具">乐器文具</option>
-                <option value="交通出行">交通出行</option>
-                <option value="零食特产">零食特产</option>
-                <option value="其他物品">其他物品</option>
+            <h3>发布商品</h3>
+            <input id="gName" placeholder="商品名"><br>
+            <input id="gPrice" placeholder="价格"><br>
+            <select id="gCate">
+                <option>教材教辅</option>
+                <option>数码电子</option>
+                <option>生活用品</option>
             </select><br>
-            <input type="file" id="picFile" accept="image/*"><br>
-            <button onclick="addGoods()">发布</button>
-            <button style="background:#ccc;margin-left:8px;" onclick="closeModal()">取消</button>
-        </div>
-    </div>
-
-    <div class="info-modal-overlay" id="infoModal">
-        <div class="info-modal-content">
-            <h3>用户信息</h3>
-            <p>用户名：<span id="infoUsername">-</span></p>
-            <p>手机号：<span id="infoPhone">-</span></p>
-            <p>角色：普通用户</p>
-            <p>发布商品：<span id="infoGoodsCount">0</span> 件</p>
-            <p>我的订单：<span id="infoOrderCount">0</span> 笔</p>
-            <button onclick="closeInfoModal()" style="margin-top:15px;">关闭</button>
+            <button onclick="publishGoods()">发布</button>
+            <button onclick="document.getElementById('publishModal').style.display='none'">取消</button>
         </div>
     </div>
 </div>
 
 <script>
-    // ====================== 已按你的要求配置 ======================
-    const API_BASE = "http://172.19.229.149:5000/api";
+// ====================== 完全按你给的接口地址 ======================
+const API = "http://172.19.229.149:5000/api";
 
-    // 本地数据
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-    let list = JSON.parse(localStorage.getItem('goods')) || [];
-    let orders = JSON.parse(localStorage.getItem('orders')) || [];
-    let selectedGoodsIndex = null;
+let token = localStorage.getItem("token") || "";
+let user = JSON.parse(localStorage.getItem("user")) || null;
+let currentGoods = null;
 
-    // ====================== 注册（对接你的接口文档） ======================
-    async function userRegister() {
-        let username = document.getElementById('regUser').value.trim();
-        let password = document.getElementById('regPwd').value.trim();
-        let confirmPassword = document.getElementById('regConfirmPwd').value.trim();
-        let phone = document.getElementById('regPhone').value.trim();
+// ====================== 页面切换 ======================
+function go(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    if(event) event.target.classList.add('active');
+}
 
-        try {
-            let res = await fetch(`${API_BASE}/Auth/register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password, confirmPassword, phone })
-            });
-            let json = await res.json();
+function switchAuth(t) {
+    document.querySelectorAll('.tab-wrap div').forEach(d => d.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('loginPanel').classList.toggle('hide', t !== 'login');
+    document.getElementById('registerPanel').classList.toggle('hide', t !== 'register');
+}
+
+// ====================== 注册（严格按你接口） ======================
+async function userRegister() {
+    let username = document.getElementById('regUser').value.trim();
+    let password = document.getElementById('regPwd').value.trim();
+    let confirmPassword = document.getElementById('regConfirmPwd').value.trim();
+    let phone = document.getElementById('regPhone').value.trim();
+
+    try {
+        let res = await fetch("http://172.19.229.149:5000/api/Auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password, confirmPassword, phone })
+        });
+        let json = await res.json();
+        alert(json.message);
+        if (json.success) switchAuth('login');
+    } catch (err) {
+        alert("注册请求失败：" + err.message);
+    }
+}
+
+// ====================== 普通登录（严格按你接口） ======================
+async function userLogin() {
+    let username = document.getElementById('loginUser').value.trim();
+    let password = document.getElementById('loginPwd').value.trim();
+
+    try {
+        let res = await fetch("http://172.19.229.149:5000/api/Auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+        let json = await res.json();
+        if (!json.success) {
             alert(json.message);
-            if (json.success) switchAuth('login');
-        } catch (e) {
-            // 离线兼容
-            if (!username || !password || !confirmPassword) { alert('请填写完整'); return; }
-            if (password !== confirmPassword) { alert('两次密码不一致'); return; }
-            if (users.find(u => u.username === username)) { alert('用户名已存在'); return; }
-            users.push({ username, password, phone });
-            localStorage.setItem('users', JSON.stringify(users));
-            alert('注册成功(本地)');
-            switchAuth('login');
+            return;
         }
+
+        token = json.data.token;
+        user = json.data.userInfo;
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        document.getElementById("authBox").classList.add("hide");
+        document.getElementById("mainContainer").classList.remove("hide");
+        document.getElementById("nickname").innerText = user.username;
+        loadGoods();
+    } catch (err) {
+        alert("登录请求失败：" + err.message);
     }
+}
 
-    // ====================== 登录（对接你的接口文档） ======================
-    async function userLogin() {
-        let username = document.getElementById('loginUser').value.trim();
-        let password = document.getElementById('loginPwd').value.trim();
+// ====================== 退出 ======================
+function logout() {
+    localStorage.clear();
+    location.reload();
+}
 
-        try {
-            let res = await fetch(`${API_BASE}/Auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password })
+// ====================== 商品列表 ======================
+async function loadGoods() {
+    try {
+        let res = await fetch(API + "/Goods", {
+            headers: { Authorization: token }
+        });
+        let json = await res.json();
+        let html = "";
+        if (json.success && json.data) {
+            json.data.forEach(item => {
+                html += `<div class="box" onclick="showDetail(${item.id})">
+                    <p>${item.name}</p>
+                    <p>¥${item.price}</p>
+                </div>`;
             });
-            let json = await res.json();
-            if (!json.success) { alert(json.message); return; }
-
-            currentUser = json.data.userInfo;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('token', json.data.token);
-
-            document.getElementById('authBox').classList.add('hide');
-            document.getElementById('mainContainer').classList.remove('hide');
-            document.getElementById('displayUsername').textContent = currentUser.username;
-            render();
-        } catch (e) {
-            // 离线兼容
-            let user = users.find(u => u.username === username && u.password === password);
-            if (!user) { alert('账号或密码错误(本地)'); return; }
-            currentUser = user;
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            document.getElementById('authBox').classList.add('hide');
-            document.getElementById('mainContainer').classList.remove('hide');
-            document.getElementById('displayUsername').textContent = user.username;
-            render();
+        } else {
+            html = "<div class='box'>暂无商品</div>";
         }
+        document.getElementById("goodsList").innerHTML = html;
+    } catch (e) {
+        document.getElementById("goodsList").innerHTML = "<div class='box'>加载失败</div>";
     }
+}
 
-    // ====================== 原有功能全部保留 ======================
-    function switchAuth(type) {
-        document.querySelectorAll('.tab-wrap div').forEach(t=>t.classList.remove('active'));
-        event.target.classList.add('active');
-        if(type==='login'){
-            document.getElementById('loginPanel').classList.remove('hide');
-            document.getElementById('registerPanel').classList.add('hide');
-        }else{
-            document.getElementById('loginPanel').classList.add('hide');
-            document.getElementById('registerPanel').classList.remove('hide');
-        }
-    }
-
-    function logout(){
-        currentUser = null;
-        localStorage.clear();
-        location.reload();
-    }
-
-    function render() {
-        let keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-        let category = document.getElementById('filterSelect').value;
-        let sortType = document.getElementById('sortSelect').value;
-        let filtered = list.filter(item=>{
-            let c = category==='全部' || item.category===category;
-            let k = !keyword || item.name.toLowerCase().includes(keyword);
-            return c&&k;
+// ====================== 商品详情 ======================
+async function showDetail(id) {
+    try {
+        let res = await fetch(API + "/Goods/" + id, {
+            headers: { Authorization: token }
         });
-        if(sortType==='priceAsc') filtered.sort((a,b)=>a.money-b.money);
-        if(sortType==='priceDesc') filtered.sort((a,b)=>b.money-a.money);
-        if(sortType==='time') filtered.sort((a,b)=>new Date(b.time)-new Date(a.time));
-        let html='';
-        filtered.forEach((item,i)=>{
-            let idx=list.indexOf(item);
-            html+=`<div class="box" onclick="showDetail(${idx})">
-                ${item.pic?`<img src="${item.pic}">`:'<div style="width:80px;height:80px;background:#f2f2f2;"></div>'}
-                <p>商品：${item.name}</p>
-                <p>价格：${item.money}元</p>
-                <p>类别：${item.category}</p>
-            </div>`;
-        });
-        document.getElementById('goodsList').innerHTML=html;
-    }
-
-    function showDetail(index){
-        selectedGoodsIndex=index;
-        let item=list[index];
-        document.getElementById('detailContent').innerHTML=`
-            ${item.pic?`<img src="${item.pic}">`:'<div style="width:120px;height:120px;background:#f2f2f2;"></div>'}
-            <h3>${item.name}</h3>
-            <p>价格：${item.money}元</p>
-            <p>类别：${item.category||'未分类'}</p>
-            <p>描述：${item.description||'暂无描述'}</p>
-            <p>卖家：<span class="seller-name">${item.seller}</span></p>
+        let json = await res.json();
+        currentGoods = json.data;
+        document.getElementById("detail").innerHTML = `
+            <p>名称：${currentGoods.name}</p>
+            <p>价格：${currentGoods.price}</p>
+            <p>分类：${currentGoods.category}</p>
         `;
-        if(!item.comments) item.comments=[];
-        renderComments(item.comments);
-        switchPage('detailPage');
-    }
+        go("detailPage");
+    } catch (e) {}
+}
 
-    function renderComments(cmt){
-        let h='';
-        if(cmt.length===0) h='<p class="comment-empty">暂无留言</p>';
-        else cmt.forEach(c=>h+=`<div class="comment-item">${c}</div>`);
-        document.getElementById('commentList').innerHTML=h;
-    }
-
-    function addComment(){
-        let v=document.getElementById('commentInput').value.trim();
-        if(!v){alert('请输入内容');return;}
-        list[selectedGoodsIndex].comments.push(v);
-        localStorage.setItem('goods',JSON.stringify(list));
-        renderComments(list[selectedGoodsIndex].comments);
-        document.getElementById('commentInput').value='';
-    }
-
-    function switchTab(t){
-        document.querySelectorAll('.tab-item').forEach(i=>i.classList.remove('active'));
-        event.target.classList.add('active');
-        if(t==='home') switchPage('homePage');
-        if(t==='mine') switchPage('minePage');
-    }
-
-    function switchPage(id){
-        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    function openModal(){document.getElementById('publishModal').style.display='flex';}
-    function closeModal(){document.getElementById('publishModal').style.display='none';}
-
-    function addGoods(){
-        let name=document.getElementById('name').value;
-        let money=document.getElementById('money').value;
-        let desc=document.getElementById('desc').value;
-        let cate=document.getElementById('category').value;
-        let f=document.getElementById('picFile');
-        if(!name||!money){alert('请填写商品名和价格');return;}
-        let pic='';
-        if(f.files[0]) pic=URL.createObjectURL(f.files[0]);
-        list.push({name,money,pic,description:desc,category:cate,seller:currentUser.username,sellerPhone:currentUser.phone,comments:[],time:new Date()});
-        localStorage.setItem('goods',JSON.stringify(list));
-        closeModal();render();alert('发布成功');
-    }
-
-    function showMyGoods(){
-        let my=list.filter(x=>x.seller===currentUser.username);
-        let h='';
-        my.forEach((item,i)=>{
-            let idx=list.indexOf(item);
-            h+=`<div class="box">
-                ${item.pic?`<img src="${item.pic}">`:''}
-                <p>${item.name}</p><p>${item.money}元</p>
-                <button class="del-btn" onclick="deleteMyGoods(${idx})">删除</button>
-            </div>`;
+// ====================== 购买 ======================
+async function buyGoods() {
+    if (!currentGoods) return;
+    try {
+        let res = await fetch(API + "/Order/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: token
+            },
+            body: JSON.stringify({ goodsId: currentGoods.id })
         });
-        document.getElementById('myGoodsList').innerHTML=h;
-        document.getElementById('myGoodsList').classList.toggle('hide');
-    }
+        let json = await res.json();
+        alert(json.message);
+        if (json.success) go("homePage");
+    } catch (e) {}
+}
 
-    function deleteMyGoods(index){
-        if(confirm('确定删除？')){
-            list.splice(index,1);
-            localStorage.setItem('goods',JSON.stringify(list));
-            showMyGoods();render();
+// ====================== 发布商品 ======================
+async function publishGoods() {
+    let name = document.getElementById("gName").value;
+    let price = document.getElementById("gPrice").value;
+    let category = document.getElementById("gCate").value;
+
+    try {
+        let res = await fetch(API + "/Goods/publish", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: token
+            },
+            body: JSON.stringify({ name, price, category })
+        });
+        let json = await res.json();
+        alert(json.message);
+        if (json.success) {
+            document.getElementById("publishModal").style.display = "none";
+            loadGoods();
         }
-    }
+    } catch (e) {}
+}
 
-    function buyGoods(){
-        if(confirm('确认购买？')){
-            let item=list[selectedGoodsIndex];
-            orders.push({name:item.name,money:item.money,time:new Date().toLocaleString()});
-            localStorage.setItem('orders',JSON.stringify(orders));
-            alert('购买成功');switchPage('homePage');
-        }
+// ====================== 初始化 ======================
+window.onload = () => {
+    if (user && token) {
+        document.getElementById("authBox").classList.add("hide");
+        document.getElementById("mainContainer").classList.remove("hide");
+        document.getElementById("nickname").innerText = user.username;
+        loadGoods();
     }
-
-    function showOrders(){
-        let h='';
-        if(orders.length===0) h='<p class="comment-empty">暂无订单</p>';
-        else orders.forEach(o=>{h+=`<div class="order-item"><p>${o.name}</p><p>${o.money}元</p><p>${o.time}</p></div>`;});
-        document.getElementById('orderList').innerHTML=h;
-        document.getElementById('orderList').classList.toggle('hide');
-    }
-
-    function showUserInfo(){
-        document.getElementById('infoUsername').innerText=currentUser.username;
-        document.getElementById('infoPhone').innerText=currentUser.phone || '未设置';
-        document.getElementById('infoGoodsCount').innerText=list.filter(x=>x.seller===currentUser.username).length;
-        document.getElementById('infoOrderCount').innerText=orders.length;
-        document.getElementById('infoModal').style.display='flex';
-    }
-
-    function closeInfoModal(){document.getElementById('infoModal').style.display='none';}
-
-    window.onload=function(){
-        if(currentUser){
-            document.getElementById('authBox').classList.add('hide');
-            document.getElementById('mainContainer').classList.remove('hide');
-            document.getElementById('displayUsername').textContent=currentUser.username;
-            render();
-        }
-    }
+};
 </script>
 </body>
 </html>
