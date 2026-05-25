@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>校园二手平台 - 用户端</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{padding:15px;padding-bottom:70px;}
+        .box{border:1px solid #999;padding:10px;margin:10px 0;border-radius:6px;cursor:pointer;}
+        img{max-width:100px;max-height:100px;object-fit:cover;display:block;}
+        input, select, textarea{margin:5px;padding:6px;}
+        button{border:none;padding:6px 15px;border-radius:4px;cursor:pointer;}
+        .page{display:none;}
+        .page.active{display:block;}
+        .hide{display:none !important;}
+
+        .filter-bar{
+            display:flex;
+            gap:10px;
+            margin:10px 0;
+            align-items:center;
+        }
+        .filter-bar input{
+            flex:1;
+        }
+
+        .auth-box{
+            width: 320px;
+            margin: 80px auto;
+            text-align: center;
+            padding:20px;
+            border-radius:10px;
+        }
+        .auth-box input{
+            width:100%;
+            margin:6px 0;
+            padding:8px;
+        }
+        .auth-box button{
+            width:100%;
+            margin:6px 0;
+            padding:10px;
+            background:#0066cc;
+            color:white;
+        }
+        .auth-box .btn2{
+            background:#666;
+        }
+        .tab-wrap{
+            display:flex;
+            margin-bottom:15px;
+        }
+        .tab-wrap div{
+            flex:1;
+            padding:10px;
+            cursor:pointer;
+            border-bottom:2px solid #eee;
+        }
+        .tab-wrap div.active{
+            border-color:#0066cc;
+            color:#0066cc;
+            font-weight:bold;
+        }
+
+        .tab-bar{
+            position:fixed;
+            bottom:0;
+            left:0;
+            right:0;
+            background:#fff;
+            display:flex;
+            justify-content:space-around;
+            padding:10px 0;
+            border-top:1px solid #eee;
+        }
+        .tab-item{
+            text-align:center;
+            color:#666;
+            cursor:pointer;
+        }
+        .tab-item.active{
+            color:#0066cc;
+        }
+
+        .comment-box{
+            border-top:1px solid #eee;
+            margin-top:20px;
+            padding-top:10px;
+        }
+        .comment-item{
+            background:#f5f5f5;
+            padding:8px;
+            margin:5px 0;
+            border-radius:4px;
+        }
+        .comment-empty{
+            color:#999;
+            text-align:center;
+        }
+
+        .del-btn{
+            background:red;
+            color:white;
+            font-size:12px;
+            padding:4px 8px;
+            margin-top:5px;
+        }
+
+        .order-item{
+            background:#f0f8ff;
+            padding:8px;
+            margin:5px 0;
+            border-radius:4px;
+        }
+        .comment-btn{
+            background:#0066cc;
+            color:white;
+            margin:5px 0;
+        }
+        .buy-btn{
+            background:green;
+            color:white;
+            margin:10px 0;
+        }
+
+        .fab-btn{
+            position:fixed;
+            bottom:80px;
+            right:20px;
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            background:#0066cc;
+            color:white;
+            font-size:30px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            box-shadow:0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .modal-overlay{
+            position:fixed;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            background:rgba(0,0,0,0.5);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:1000;
+        }
+        .modal-content{
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            width:90%;
+            max-width:400px;
+        }
+
+        .profile-header{
+            text-align:center;
+            margin:20px 0;
+        }
+        .avatar{
+            width:80px;
+            height:80px;
+            border-radius:50%;
+            background:#eee;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:40px;
+            margin:0 auto 10px;
+            cursor:pointer;
+            border:2px solid #ccc;
+        }
+
+        .info-modal-overlay{
+            position:fixed;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            background:rgba(0,0,0,0.5);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:1001;
+        }
+        .info-modal-content{
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            width:90%;
+            max-width:300px;
+            text-align:center;
+        }
+
+        .seller-name{
+            color:#0066cc;
+            cursor:pointer;
+            text-decoration:underline;
+        }
+    </style>
+</head>
+<body>
+
+<div id="authBox" class="auth-box">
+    <div class="tab-wrap">
+        <div class="active" onclick="switchAuth('login')">登录</div>
+        <div onclick="switchAuth('register')">注册</div>
+    </div>
+
+    <div id="loginPanel">
+        <input type="text" id="loginAccount" placeholder="输入账号/手机号">
+        <input type="password" id="loginPwd" placeholder="输入密码">
+        <button onclick="userLogin()">立即登录</button>
+    </div>
+
+    <div id="registerPanel" class="hide">
+        <input type="text" id="regUsername" placeholder="设置用户名">
+        <input type="text" id="regPhone" placeholder="绑定手机号">
+        <input type="password" id="regPwd" placeholder="设置密码">
+        <button onclick="userRegister()">提交注册</button>
+    </div>
+</div>
+
+<div id="mainContainer" class="hide">
+    <div id="homePage" class="page active">
+        <h2>校园二手交易平台</h2>
+        <div class="filter-bar">
+            <input type="text" id="searchInput" placeholder="搜索商品名称" oninput="render()">
+            <select id="filterSelect" onchange="render()">
+                <option value="全部">全部</option>
+                <option value="教材教辅">教材教辅</option>
+                <option value="数码电子">数码电子</option>
+                <option value="生活用品">生活用品</option>
+                <option value="服饰鞋包">服饰鞋包</option>
+                <option value="运动器材">运动器材</option>
+                <option value="美妆护肤">美妆护肤</option>
+                <option value="宿舍家具">宿舍家具</option>
+                <option value="乐器文具">乐器文具</option>
+                <option value="交通出行">交通出行</option>
+                <option value="零食特产">零食特产</option>
+                <option value="其他物品">其他物品</option>
+            </select>
+            <select id="sortSelect" onchange="render()">
+                <option value="time">按发布时间排序（新→旧）</option>
+                <option value="priceAsc">按价格从低到高</option>
+                <option value="priceDesc">按价格从高到低</option>
+            </select>
+        </div>
+        <div id="goodsList"></div>
+    </div>
+
+    <div id="detailPage" class="page">
+        <h2>商品详情</h2>
+        <div id="detailContent"></div>
+        <div class="comment-box" id="commentArea">
+            <h4>留言区</h4>
+            <div id="commentList"></div>
+            <input type="text" id="commentInput" placeholder="写下你的留言">
+            <button class="comment-btn" onclick="addComment()">发表留言</button>
+        </div>
+        <button class="buy-btn" onclick="buyGoods()">立即购买</button>
+    </div>
+
+    <div id="minePage" class="page">
+        <h2>个人中心</h2>
+        <div class="profile-header">
+            <div class="avatar" onclick="showUserInfo()">👤</div>
+            <p id="displayUsername">用户</p>
+        </div>
+        <div class="box" onclick="showMyGoods()">我的发布</div>
+        <div id="myGoodsList" class="hide"></div>
+        <div class="box" onclick="showOrders()">我的订单</div>
+        <div id="orderList" class="hide"></div>
+    </div>
+
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('home')">🏠 首页</div>
+        <div class="tab-item" onclick="switchTab('mine')">👤 我的</div>
+    </div>
+
+    <div class="fab-btn" onclick="openModal()">+</div>
+
+    <div class="modal-overlay" id="publishModal">
+        <div class="modal-content">
+            <h3>发布闲置</h3>
+            <input type="text" id="name" placeholder="商品名"><br>
+            <input type="text" id="money" placeholder="价格"><br>
+            <textarea id="desc" placeholder="商品描述"></textarea><br>
+            <select id="category">
+                <option value="教材教辅">教材教辅</option>
+                <option value="数码电子">数码电子</option>
+                <option value="生活用品">生活用品</option>
+                <option value="服饰鞋包">服饰鞋包</option>
+                <option value="运动器材">运动器材</option>
+                <option value="美妆护肤">美妆护肤</option>
+                <option value="宿舍家具">宿舍家具</option>
+                <option value="乐器文具">乐器文具</option>
+                <option value="交通出行">交通出行</option>
+                <option value="零食特产">零食特产</option>
+                <option value="其他物品">其他物品</option>
+            </select><br>
+            <input type="file" id="picFile" accept="image/*"><br>
+            <button onclick="addGoods()">提交发布</button>
+            <button style="background:#ccc;margin-left:10px;" onclick="closeModal()">取消</button>
+        </div>
+    </div>
+
+    <div class="info-modal-overlay" id="infoModal">
+        <div class="info-modal-content">
+            <h3>用户信息</h3>
+            <p>用户名：<span id="infoUsername">用户</span></p>
+            <p>手机号：<span id="infoPhone">未填写</span></p>
+            <p>角色：普通用户</p>
+            <p>发布商品数：<span id="infoGoodsCount">0</span>件</p>
+            <p>订单数：<span id="infoOrderCount">0</span>笔</p>
+            <button onclick="closeInfoModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUser = {username:"游客用户",phone:"未填写"};
+
+    function switchAuth(type){
+        document.querySelectorAll('.tab-wrap div').forEach(t=>t.classList.remove('active'));
+        event.target.classList.add('active');
+        if(type==='login'){
+            document.getElementById('loginPanel').classList.remove('hide');
+            document.getElementById('registerPanel').classList.add('hide');
+        }else{
+            document.getElementById('loginPanel').classList.add('hide');
+            document.getElementById('registerPanel').classList.remove('hide');
+        }
+    }
+
+    function userRegister(){
+        alert('本地模拟注册，填写信息即可');
+        switchAuth('login');
+    }
+
+    function userLogin(){
+        let account = document.getElementById('loginAccount').value.trim();
+        let pwd = document.getElementById('loginPwd').value.trim();
+        if(!account || !pwd){
+            alert('账号密码不能为空');
+            return;
+        }
+        currentUser.username = account;
+        document.getElementById('authBox').classList.add('hide');
+        document.getElementById('mainContainer').classList.remove('hide');
+        document.getElementById('displayUsername').textContent = account;
+        render();
+    }
+
+    let list = JSON.parse(localStorage.getItem('goods')) || [];
+    let orders = JSON.parse(localStorage.getItem('orders')) || [];
+    let selectedGoodsIndex = null;
+
+    function render() {
+        let keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+        let category = document.getElementById('filterSelect').value;
+        let sortType = document.getElementById('sortSelect').value;
+        let filtered = list.filter(item=>{
+            let c = category==='全部' || item.category===category;
+            let k = !keyword || item.name.toLowerCase().includes(keyword);
+            return c&&k;
+        });
+        if(sortType==='priceAsc') filtered.sort((a,b)=>a.money-b.money);
+        if(sortType==='priceDesc') filtered.sort((a,b)=>b.money-a.money);
+        if(sortType==='time') filtered.sort((a,b)=>new Date(b.time)-new Date(a.time));
+        let html='';
+        filtered.forEach((item,i)=>{
+            let idx=list.indexOf(item);
+            html+=`<div class="box" onclick="showDetail(${idx})">
+                ${item.pic?`<img src="${item.pic}">`:'<div style="width:80px;height:80px;background:#f2f2f2;"></div>'}
+                <p>商品：${item.name}</p>
+                <p>价格：${item.money}元</p>
+                <p>类别：${item.category}</p>
+            </div>`;
+        });
+        document.getElementById('goodsList').innerHTML=html;
+    }
+
+    function showDetail(index){
+        selectedGoodsIndex=index;
+        let item=list[index];
+        let seller=item.seller || '用户';
+        let phone=item.sellerPhone || '未公开';
+        document.getElementById('detailContent').innerHTML=`
+            ${item.pic?`<img src="${item.pic}">`:'<div style="width:120px;height:120px;background:#f2f2f2;"></div>'}
+            <h3>${item.name}</h3>
+            <p>价格：${item.money}元</p>
+            <p>类别：${item.category||'未分类'}</p>
+            <p>描述：${item.description||'暂无描述'}</p>
+            <p>卖家：<span class="seller-name" onclick="showSellerInfo('${seller}','${phone}')">${seller}</span></p>
+        `;
+        if(!item.comments) item.comments=[];
+        renderComments(item.comments);
+        switchPage('detailPage');
+    }
+
+    function renderComments(cmt){
+        let h='';
+        if(cmt.length===0) h='<p class="comment-empty">暂无留言</p>';
+        else cmt.forEach(c=>h+=`<div class="comment-item">${c}</div>`);
+        document.getElementById('commentList').innerHTML=h;
+    }
+
+    function addComment(){
+        let v=document.getElementById('commentInput').value.trim();
+        if(!v){alert('请输入内容');return;}
+        list[selectedGoodsIndex].comments.push(v);
+        localStorage.setItem('goods',JSON.stringify(list));
+        renderComments(list[selectedGoodsIndex].comments);
+        document.getElementById('commentInput').value='';
+    }
+
+    function switchTab(t){
+        document.querySelectorAll('.tab-item').forEach(i=>i.classList.remove('active'));
+        event.target.classList.add('active');
+        if(t==='home') switchPage('homePage');
+        if(t==='mine') switchPage('minePage');
+    }
+
+    function switchPage(id){
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function openModal(){document.getElementById('publishModal').style.display='flex';}
+    function closeModal(){document.getElementById('publishModal').style.display='none';}
+
+    function addGoods(){
+        let name=document.getElementById('name').value;
+        let money=document.getElementById('money').value;
+        let desc=document.getElementById('desc').value;
+        let cate=document.getElementById('category').value;
+        let f=document.getElementById('picFile');
+        if(!name||!money){alert('请填写商品名和价格');return;}
+        let pic='';
+        if(f.files[0]) pic=URL.createObjectURL(f.files[0]);
+        list.push({
+            name,money,pic,description:desc,category:cate,
+            seller:currentUser.username,
+            sellerPhone:currentUser.phone,
+            comments:[],time:new Date()
+        });
+        localStorage.setItem('goods',JSON.stringify(list));
+        closeModal();
+        render();
+        alert('发布成功');
+    }
+
+    function showMyGoods(){
+        let my=list.filter(x=>x.seller===currentUser.username);
+        let h='';
+        my.forEach(item=>{
+            h+=`<div class="box">
+                ${item.pic?`<img src="${item.pic}">`:''}
+                <p>${item.name}</p><p>${item.money}元</p>
+            </div>`;
+        });
+        document.getElementById('myGoodsList').innerHTML=h;
+        document.getElementById('myGoodsList').classList.toggle('hide');
+    }
+
+    function buyGoods(){
+        let item=list[selectedGoodsIndex];
+        if(confirm('确认购买？')){
+            orders.push({
+                name:item.name,money:item.money,
+                time:new Date().toLocaleString()
+            });
+            localStorage.setItem('orders',JSON.stringify(orders));
+            alert('购买成功');
+            switchPage('homePage');
+        }
+    }
+
+    function showOrders(){
+        let h='';
+        if(orders.length===0) h='<p class="comment-empty">暂无订单</p>';
+        else orders.forEach(o=>{
+            h+=`<div class="order-item">
+                <p>${o.name}</p><p>${o.money}元</p>
+                <p>${o.time}</p>
+            </div>`;
+        });
+        document.getElementById('orderList').innerHTML=h;
+        document.getElementById('orderList').classList.toggle('hide');
+    }
+
+    function showSellerInfo(name,phone){
+        document.getElementById('infoUsername').innerText=name;
+        document.getElementById('infoPhone').innerText=phone;
+        document.getElementById('infoGoodsCount').innerText=list.filter(x=>x.seller===name).length;
+        document.getElementById('infoOrderCount').innerText='-';
+        document.getElementById('infoModal').style.display='flex';
+    }
+
+    function showUserInfo(){
+        document.getElementById('infoUsername').innerText=currentUser.username;
+        document.getElementById('infoPhone').innerText=currentUser.phone;
+        document.getElementById('infoGoodsCount').innerText=list.filter(x=>x.seller===currentUser.username).length;
+        document.getElementById('infoOrderCount').innerText=orders.length;
+        document.getElementById('infoModal').style.display='flex';
+    }
+
+    function closeInfoModal(){
+        document.getElementById('infoModal').style.display='none';
+    }
+</script>
+</body>
+</html>
