@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using CampusSecondHand.API.Filters;
 using CampusSecondHand.API.Models;
@@ -437,6 +437,106 @@ namespace CampusSecondHand.API.Controllers
             catch (Exception ex)
             {
                 return Ok(new ApiResponse { Success = false, Message = "修改角色失败：" + ex.Message });
+            }
+        }
+
+        // 删除用户（需管理员权限，不能删除自己）
+        [HttpDelete("users/{id}")]
+        [AuthFilter(RequireAdmin = true)]
+        public IActionResult DeleteUser(long id)
+        {
+            try
+            {
+                // 从 Token 获取当前操作者ID
+                long currentAdminId = Convert.ToInt64(HttpContext.Items["UserId"]);
+
+                // 不能删除自己
+                if (id == currentAdminId)
+                {
+                    return Ok(new ApiResponse { Success = false, Message = "不能删除自己的账号" });
+                }
+
+                using (var conn = new MySqlConnection(_connStr))
+                {
+                    conn.Open();
+
+                    // 检查用户是否存在
+                    string checkSql = "SELECT user_id, username, role FROM `user` WHERE user_id = @Id";
+                    string targetUsername;
+                    int targetRole;
+                    using (var cmd = new MySqlCommand(checkSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", id);
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (!reader.Read())
+                            {
+                                return Ok(new ApiResponse { Success = false, Message = "用户不存在" });
+                            }
+
+                            targetUsername = reader["username"].ToString();
+                            targetRole = Convert.ToInt32(reader["role"]);
+                        }
+                    }
+
+                    // 禁止删除其他管理员
+                    if (targetRole == 1)
+                    {
+                        return Ok(new ApiResponse { Success = false, Message = "不能删除其他管理员账号" });
+                    }
+
+                    // 检查是否有进行中的交易
+                    string tradeSql = "SELECT COUNT(*) FROM `trade` WHERE (buyer_id = @UserId OR seller_id = @UserId) AND status = 0";
+                    using (var cmd = new MySqlCommand(tradeSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", id);
+                        int activeTradeCount = Convert.ToInt32(cmd.ExecuteScalar());
+                        if (activeTradeCount > 0)
+                        {
+                            return Ok(new ApiResponse { Success = false, Message = "该用户有进行中的交易，请先处理后再删除" });
+                        }
+                    }
+
+                    // 按外键依赖顺序级联删除
+                    // ① 删除该用户所有商品的图片（goods_image 有 ON DELETE CASCADE，但显式清理更安全）
+                    string delImageSql = "DELETE FROM `goods_image` WHERE goods_id IN (SELECT goods_id FROM `goods` WHERE user_id = @UserId)";
+                    using (var cmd = new MySqlCommand(delImageSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // ② 删除该用户相关的所有交易记录
+                    string delTradeSql = "DELETE FROM `trade` WHERE buyer_id = @UserId OR seller_id = @UserId";
+                    using (var cmd = new MySqlCommand(delTradeSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // ③ 删除该用户的所有商品
+                    string delGoodsSql = "DELETE FROM `goods` WHERE user_id = @UserId";
+                    using (var cmd = new MySqlCommand(delGoodsSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // ④ 最后删除用户
+                    string delUserSql = "DELETE FROM `user` WHERE user_id = @UserId";
+                    using (var cmd = new MySqlCommand(delUserSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    return Ok(new ApiResponse { Success = true, Message = $"用户「{targetUsername}」已删除" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "删除用户失败：" + ex.Message });
             }
         }
     }
