@@ -176,7 +176,7 @@ namespace CampusSecondHand.API.Controllers
         // 用户列表（分页，支持关键词搜索用户名，不返回密码字段）
         [HttpGet("users")]
         [AuthFilter(RequireAdmin = true)]
-        public IActionResult GetUsers([FromQuery] string keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public IActionResult GetUsers([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {

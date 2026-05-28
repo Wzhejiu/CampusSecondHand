@@ -114,7 +114,7 @@ namespace CampusSecondHand.API.Controllers
         [HttpGet]
         public IActionResult GetList(
             [FromQuery] long? categoryId,
-            [FromQuery] string keyword,
+            [FromQuery] string? keyword,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
