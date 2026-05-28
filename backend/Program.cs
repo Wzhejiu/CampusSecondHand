@@ -1,40 +1,53 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
-// Ìí¼Ó CORS ²ßÂÔ£¨·ÅÔÚ AddControllers Ö®Ç°»òÖ®ºó¶¼¿ÉÒÔ£©
+// ï¿½ï¿½È«ï¿½Å¿ï¿½ CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy =>
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// å¯ç”¨é™æ€æ–‡ä»¶æœåŠ¡ï¼ˆç”¨äºŽè®¿é—® wwwroot/uploads/ ä¸‹çš„ä¸Šä¼ å›¾ç‰‡ï¼‰
+app.UseStaticFiles();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 
-// Ê¹ÓÃ CORS£¨·ÅÔÚ UseAuthorization Ö®Ç°£©
 app.UseCors("AllowAll");
 
+// ï¿½Ö¶ï¿½ï¿½ï¿½ï¿½ CORS Í·ï¿½ï¿½Ë«ï¿½Ø±ï¿½ï¿½Ï£ï¿½
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+    context.Response.Headers.Append("Access-Control-Allow-Methods", "*");
+    context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        return;
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
