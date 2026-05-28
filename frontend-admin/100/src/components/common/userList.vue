@@ -24,7 +24,7 @@
                     <span style="margin-left: 10px">新增管理员密码</span>
                     <el-input v-model="adminPassword" minlength="8" placeholder="请输入管理员密码" style="padding: 10px 0" show-password required></el-input>
                     <span style="margin-left: 10px">确认管理员密码</span>
-                    <el-input v-model="adminRePassword" minlength="10" placeholder="请再次输入管理员密码" style="padding: 10px 0" show-password required></el-input>
+                    <el-input v-model="adminRePassword" minlength="8" placeholder="请再次输入管理员密码" style="padding: 10px 0" show-password required></el-input>
                     <span slot="footer" class="dialog-footer">
                         <el-button type="primary" @click="regAdmin">添加</el-button>
                     </span>
@@ -62,10 +62,6 @@
             </el-table-column>
             <el-table-column label="操作">
                 <template slot-scope="scope">
-                    <el-button
-                            size="mini"
-                            type="danger"
-                            @click="sealUser(scope.$index)">封号</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -102,10 +98,6 @@
             </el-table-column>
             <el-table-column label="操作">
                 <template slot-scope="scope">
-                    <el-button
-                            size="mini"
-                            type="success"
-                            @click="unsealUser(scope.$index)">解封</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -257,7 +249,7 @@
             },
             regAdmin(){
                 if(this.adminPassword == this.adminRePassword){
-                    this.$api.regAdministrator({
+                    this.$api.adminRegister({
                         adminName: this.adminName,
                         accountNumber: this.adminAccount,
                         adminPassword: this.adminPassword,

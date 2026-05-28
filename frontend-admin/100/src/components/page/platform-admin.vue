@@ -1,70 +1,83 @@
 <template>
-  <div style="background-color: #f6f6f6;min-height:100vh;">
+  <div class="admin-layout">
     <el-container>
-      <el-header>
-        <div class="header">
-          <div class="app-name">
-            <router-link to="/platform-admin">后台管理</router-link>
+      <el-header class="admin-header">
+        <div class="header-content">
+          <div class="header-left">
+            <div class="logo">
+              <i class="el-icon-s-platform"></i>
+              <router-link to="/platform-admin">校园二手交易平台</router-link>
+            </div>
           </div>
-          <span class="app-title">管理员：{{admin.nickname}}</span>
-          <div class="app-logOut">
-            <el-button style="margin-right: 100px" type="primary" @click="logout">退出登录</el-button>
+          <div class="header-right">
+            <div class="admin-info">
+              <el-avatar size="small" icon="el-icon-user-solid"></el-avatar>
+              <span class="admin-name">{{admin.nickname}}</span>
+            </div>
+            <el-button type="danger" size="small" @click="logout">
+              <i class="el-icon-switch-button"></i> 退出登录
+            </el-button>
           </div>
         </div>
       </el-header>
-      <el-container>
-        <div class="mainBody">
-          <el-aside>
-            <el-col :span="24">
-              <el-menu
-                  default-active="1"
-                  class="el-menu-vertical-demo"
-                  @select="handleSelect"
-                  background-color="#ffffff"
-                  text-color="#303133"
-                  active-text-color="#409EFF">
-                <el-menu-item index="1">
-                  <i class="el-icon-goods"></i>
-                  <span>闲置管理</span>
-                </el-menu-item>
-                <el-menu-item index="2">
-                  <i class="el-icon-s-goods"></i>
-                  <span slot="title">订单管理</span>
-                </el-menu-item>
-                <el-menu-item index="3">
-                  <i class="el-icon-s-custom"></i>
-                  <span slot="title">用户管理</span>
-                </el-menu-item>
-              </el-menu>
-            </el-col>
-          </el-aside>
-          <el-main>
-            <IdleGoods v-if="mode == 1"></IdleGoods>
-            <orderList v-if="mode == 2"></orderList>
-            <userList v-if="mode == 3"></userList>
-          </el-main>
-        </div>
+      <el-container class="main-container">
+        <el-aside width="220px" class="admin-aside">
+          <el-menu
+              default-active="1"
+              class="side-menu"
+              @select="handleSelect"
+              background-color="#304156"
+              text-color="#bfcbd9"
+              active-text-color="#409EFF">
+            <el-menu-item index="1">
+              <i class="el-icon-s-check"></i>
+              <span slot="title">商品审核</span>
+            </el-menu-item>
+            <el-menu-item index="2">
+              <i class="el-icon-goods"></i>
+              <span slot="title">商品管理</span>
+            </el-menu-item>
+            <el-menu-item index="3">
+              <i class="el-icon-s-order"></i>
+              <span slot="title">订单管理</span>
+            </el-menu-item>
+            <el-menu-item index="4">
+              <i class="el-icon-user"></i>
+              <span slot="title">用户管理</span>
+            </el-menu-item>
+            <el-menu-item index="5">
+              <i class="el-icon-menu"></i>
+              <span slot="title">分类管理</span>
+            </el-menu-item>
+          </el-menu>
+        </el-aside>
+        <el-main class="admin-main">
+          <GoodsAudit v-if="mode == 1"></GoodsAudit>
+          <IdleGoods v-if="mode == 2"></IdleGoods>
+          <OrderManage v-if="mode == 3"></OrderManage>
+          <UserManage v-if="mode == 4"></UserManage>
+          <CategoryManage v-if="mode == 5"></CategoryManage>
+        </el-main>
       </el-container>
     </el-container>
-    <div class="foot">
-      <app-foot></app-foot>
-    </div>
   </div>
 </template>
 
 <script>
-import AppFoot from '../common/AppFoot.vue'
+import GoodsAudit from '../common/GoodsAudit.vue'
 import IdleGoods from '../common/IdleGoods.vue'
-import orderList from '../common/orderList.vue'
-import userList from '../common/userList.vue'
+import OrderManage from '../common/OrderManage.vue'
+import UserManage from '../common/UserManage.vue'
+import CategoryManage from '../common/CategoryManage.vue'
 
 export default {
   name: "platform-admin",
   components: {
-    AppFoot,
+    GoodsAudit,
     IdleGoods,
-    orderList,
-    userList,
+    OrderManage,
+    UserManage,
+    CategoryManage,
   },
   data() {
     return {
@@ -93,101 +106,100 @@ export default {
       if (this.mode !== val) {
         this.mode = val
       }
-    },
-    searchIdle(){
-      if (this.mode === 1) {
-        this.$api.adminQueryOrder({
-          page: page,
-          nums: 8,
-          searchValue: this.searchValue
-        }).then(res => {
-          console.log(res);
-        }).catch(e => {
-          console.log(e)
-        })
-      } else if(this.mode === 2){
-
-      } else {
-
-      }
     }
   },
 }
 </script>
 
 <style scoped>
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  min-width: 100vw;
-  height: 58px;
-  background: #ffffff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: #eeeeee solid 2px;
+.admin-layout {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.admin-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0;
+  height: 60px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 1000;
 }
 
-.app-name {
+.header-content {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  min-width: 10vw;
-  flex: 1;
   height: 100%;
-  border-right: 1px solid #e5e5e5;
-}
-
-.app-name a {
-  color: #409EFF;
-  font-size: 18px;
-  font-weight: 800;
-  text-decoration: none;
   padding: 0 20px;
 }
 
-.app-title {
+.header-left .logo {
   display: flex;
-  justify-content: center;
-  flex: 8;
-  width: 100px;
-}
-
-.app-logOut {
-  display: flex;
-  flex: 1;
-  justify-content: flex-end;
   align-items: center;
+  gap: 10px;
 }
 
-.mainBody {
+.header-left .logo i {
+  font-size: 24px;
+  color: #fff;
+}
+
+.header-left .logo a {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+.header-right {
   display: flex;
-  width: 100%;
+  align-items: center;
+  gap: 20px;
 }
 
-aside {
-  flex: 1;
-  box-sizing: content-box;
-  min-width: 10vw;
-  min-height: calc(100vh - 120px);
-  background-color: rgb(255, 255, 255);
-  border-bottom: 1px solid #e5e5e5;
-  border-right: 1px solid #e5e5e5;
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
 }
 
-main {
-  flex: 9;
+.admin-name {
+  font-size: 14px;
 }
 
-.foot {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 58px;
-  background-color: #ffffff;
+.main-container {
+  min-height: calc(100vh - 60px);
+}
+
+.admin-aside {
+  background-color: #304156;
+  overflow-y: auto;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.side-menu {
+  border-right: none;
+}
+
+.side-menu .el-menu-item {
+  height: 50px;
+  line-height: 50px;
+  font-size: 14px;
+}
+
+.side-menu .el-menu-item:hover {
+  background-color: #263445 !important;
+}
+
+.side-menu .el-menu-item.is-active {
+  background-color: #263445 !important;
+}
+
+.admin-main {
+  background-color: #f0f2f5;
+  padding: 20px;
+  min-height: calc(100vh - 60px);
 }
 </style>
