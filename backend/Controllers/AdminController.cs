@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using CampusSecondHand.API.Filters;
 using CampusSecondHand.API.Models;
@@ -363,6 +363,7 @@ namespace CampusSecondHand.API.Controllers
         }
 
         // 修改用户角色（不能修改自己的角色）
+        // role: 0=降为普通用户, 1=升为管理员
         [HttpPut("users/{id}/role")]
         [AuthFilter(RequireAdmin = true)]
         public IActionResult UpdateUserRole(long id, [FromBody] UpdateRoleRequest req)

@@ -2,7 +2,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
-// ��ȫ�ſ� CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -32,7 +31,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 
-// �ֶ���� CORS ͷ��˫�ر��ϣ�
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
