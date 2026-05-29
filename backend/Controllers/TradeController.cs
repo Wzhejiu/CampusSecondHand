@@ -129,8 +129,9 @@ namespace CampusSecondHand.API.Controllers
                 {
                     conn.Open();
 
-                    // 查询交易信息：校验存在性、卖家身份、当前状态
-                    string querySql = "SELECT trade_id, seller_id, status FROM `trade` WHERE trade_id = @TradeId";
+                    // 1. 查询交易信息：校验存在性、卖家身份、当前状态
+                    long goodsId;
+                    string querySql = "SELECT trade_id, goods_id, seller_id, status FROM `trade` WHERE trade_id = @TradeId";
                     using (var cmd = new MySqlCommand(querySql, conn))
                     {
                         cmd.Parameters.AddWithValue("@TradeId", id);
@@ -154,14 +155,24 @@ namespace CampusSecondHand.API.Controllers
                             {
                                 return Ok(new ApiResponse { Success = false, Message = "当前交易状态不允许此操作" });
                             }
+
+                            goodsId = Convert.ToInt64(reader["goods_id"]);
                         }
                     }
 
-                    // 更新状态为已完成
+                    // 2. 更新状态为已完成
                     string updateSql = "UPDATE `trade` SET status = 1, update_time = NOW() WHERE trade_id = @TradeId";
                     using (var cmd = new MySqlCommand(updateSql, conn))
                     {
                         cmd.Parameters.AddWithValue("@TradeId", id);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // 3. 交易完成后将商品状态改为"订单结束"（用户不可见）
+                    string updateGoodsSql = "UPDATE `goods` SET audit_status = 2, update_time = NOW() WHERE goods_id = @GoodsId";
+                    using (var cmd = new MySqlCommand(updateGoodsSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@GoodsId", goodsId);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -279,7 +290,7 @@ namespace CampusSecondHand.API.Controllers
                                                buyer.username AS buyer_name,
                                                seller.username AS seller_name
                                         FROM `trade` t
-                                        JOIN `goods` g ON t.goods_id = g.goods_id
+                                        LEFT JOIN `goods` g ON t.goods_id = g.goods_id
                                         JOIN `user` buyer ON t.buyer_id = buyer.user_id
                                         JOIN `user` seller ON t.seller_id = seller.user_id
                                         WHERE (t.buyer_id = @UserId OR t.seller_id = @UserId){statusCondition}
@@ -314,7 +325,7 @@ namespace CampusSecondHand.API.Controllers
                                 {
                                     tradeId = reader["trade_id"],
                                     goodsId = reader["goods_id"],
-                                    goodsTitle = reader["goods_title"].ToString(),
+                                    goodsTitle = reader["goods_title"] == DBNull.Value ? "商品已删除" : reader["goods_title"].ToString(),
                                     buyerId = buyerId,
                                     sellerId = sellerId,
                                     status = reader["status"],

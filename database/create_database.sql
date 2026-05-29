@@ -29,7 +29,7 @@ CREATE TABLE `goods` (
   `title` VARCHAR(100) NOT NULL COMMENT '商品名称',
   `description` TEXT DEFAULT NULL COMMENT '商品描述',
   `price` DECIMAL(10,2) NOT NULL COMMENT '价格',
-  `audit_status` TINYINT NOT NULL DEFAULT 0 COMMENT '商品状态:0-待审核,1-通过,2-驳回',
+  `audit_status` TINYINT NOT NULL DEFAULT 0 COMMENT '商品状态:0-待审核,1-通过,2-订单结束',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   FOREIGN KEY (`user_id`) REFERENCES `user`(`user_id`),
