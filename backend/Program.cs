@@ -15,7 +15,35 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+ builder.Services.AddSwaggerGen(c =>
+ {
+     // 定义 JWT Bearer 安全方案 → Swagger UI 右上角出现 Authorize 按钮
+     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+     {
+         Name = "Authorization",
+         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+         Scheme = "bearer",
+         BearerFormat = "JWT",
+         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+         Description = "输入 JWT Token：Bearer {你的token}"
+     });
+ 
+     // 全局应用 Bearer 安全要求
+     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+     {
+         {
+             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+             {
+                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                 {
+                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                     Id = "Bearer"
+                 }
+             },
+             Array.Empty<string>()
+         }
+     });
+ });
 
 var app = builder.Build();
 

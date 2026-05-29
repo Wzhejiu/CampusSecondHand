@@ -539,19 +539,142 @@ namespace CampusSecondHand.API.Controllers
                 return Ok(new ApiResponse { Success = false, Message = "删除用户失败：" + ex.Message });
             }
         }
-    }
 
-    // ========== 请求 DTO（放在同一文件，与项目现有风格对齐） ==========
+        // ==================== 商品管理 ====================
 
-    // 审核商品请求
-    public class AuditGoodsRequest
-    {
-        public int AuditStatus { get; set; } // 1=通过, 2=驳回
-    }
+        /// <summary>
+        /// 管理员编辑任意商品信息（价格、描述、图片等），不受发布者限制
+        /// </summary>
+        [HttpPut("goods/{id}")]
+        [AuthFilter(RequireAdmin = true)]
+        public IActionResult UpdateGoods(long id, [FromBody] AdminUpdateGoodsRequest req)
+        {
+            try
+            {
+                using (var conn = new MySqlConnection(_connStr))
+                {
+                    conn.Open();
 
-    // 修改角色请求
-    public class UpdateRoleRequest
-    {
-        public int Role { get; set; } // 0=普通用户, 1=管理员
+                    // ① 校验商品是否存在
+                    string checkSql = "SELECT goods_id, title, user_id FROM `goods` WHERE goods_id = @Id";
+                    string goodsTitle;
+                    long ownerId;
+                    using (var cmd = new MySqlCommand(checkSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Id", id);
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (!reader.Read())
+                            {
+                                return Ok(new ApiResponse { Success = false, Message = "商品不存在" });
+                            }
+                            goodsTitle = reader["title"].ToString();
+                            ownerId = Convert.ToInt64(reader["user_id"]);
+                        }
+                    }
+
+                    // ② 动态构建 UPDATE 语句（只更新前端传了值的字段）
+                    var setClauses = new System.Text.StringBuilder();
+                    var parameters = new List<MySqlParameter>();
+
+                    if (!string.IsNullOrWhiteSpace(req.Title))
+                    {
+                        setClauses.Append("title = @Title, ");
+                        parameters.Add(new MySqlParameter("@Title", req.Title.Trim()));
+                    }
+                    if (!string.IsNullOrWhiteSpace(req.Description))
+                    {
+                        setClauses.Append("description = @Description, ");
+                        parameters.Add(new MySqlParameter("@Description", req.Description.Trim()));
+                    }
+                    if (req.Price.HasValue)
+                    {
+                        setClauses.Append("price = @Price, ");
+                        parameters.Add(new MySqlParameter("@Price", req.Price.Value));
+                    }
+                    if (req.CategoryId.HasValue)
+                    {
+                        setClauses.Append("category_id = @CategoryId, ");
+                        parameters.Add(new MySqlParameter("@CategoryId", req.CategoryId.Value));
+                    }
+
+                    if (setClauses.Length > 0)
+                    {
+                        setClauses.Append("update_time = NOW()");
+                        string updateSql = $"UPDATE `goods` SET {setClauses} WHERE goods_id = @Id";
+                        parameters.Add(new MySqlParameter("@Id", id));
+
+                        using (var cmd = new MySqlCommand(updateSql, conn))
+                        {
+                            cmd.Parameters.AddRange(parameters.ToArray());
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    // ③ 如果传了新图片列表，先删旧图再插新图
+                    if (req.Images != null && req.Images.Count > 0)
+                    {
+                        string delSql = "DELETE FROM `goods_image` WHERE goods_id = @GoodsId";
+                        using (var cmd = new MySqlCommand(delSql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@GoodsId", id);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        foreach (var imageUrl in req.Images)
+                        {
+                            if (string.IsNullOrWhiteSpace(imageUrl)) continue;
+                            string insSql = "INSERT INTO `goods_image` (goods_id, image_url) VALUES (@GoodsId, @Url)";
+                            using (var cmd = new MySqlCommand(insSql, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@GoodsId", id);
+                                cmd.Parameters.AddWithValue("@Url", imageUrl.Trim());
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                    }
+
+                    return Ok(new ApiResponse
+                    {
+                        Success = true,
+                        Message = $"商品「{goodsTitle}」已更新（发布者ID: {ownerId}）",
+                        Data = new { goodsId = id }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Ok(new ApiResponse { Success = false, Message = "编辑商品失败：" + ex.Message });
+            }
+        }
+
+        // ========== 请求 DTO（放在同一文件，与项目现有风格对齐） ==========
+
+        // 审核商品请求
+        public class AuditGoodsRequest
+        {
+            public int AuditStatus { get; set; } // 1=通过, 2=驳回
+        }
+
+        // 修改角色请求
+        public class UpdateRoleRequest
+        {
+            public int Role { get; set; } // 0=普通用户, 1=管理员
+        }
+
+        /// <summary>管理员编辑商品的请求体</summary>
+        public class AdminUpdateGoodsRequest
+        {
+            /// <summary>商品标题（可选）</summary>
+            public string? Title { get; set; }
+            /// <summary>商品描述（可选）</summary>
+            public string? Description { get; set; }
+            /// <summary>价格（可选）</summary>
+            public decimal? Price { get; set; }
+            /// <summary>分类ID（可选）</summary>
+            public long? CategoryId { get; set; }
+            /// <summary>图片URL列表（可选，传了则全量替换）</summary>
+            public List<string>? Images { get; set; }
+        }
     }
 }
