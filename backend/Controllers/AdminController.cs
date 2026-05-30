@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using CampusSecondHand.API.Filters;
 using CampusSecondHand.API.Models;
@@ -47,7 +47,8 @@ namespace CampusSecondHand.API.Controllers
                     string listSql = @"SELECT g.goods_id, g.user_id, g.category_id, g.title, g.description,
                                               g.price, g.audit_status, g.create_time, g.update_time,
                                               u.username AS publisher_name, u.phone AS publisher_phone,
-                                              c.category_name
+                                              c.category_name,
+                                              (SELECT image_url FROM `goods_image` WHERE goods_id = g.goods_id LIMIT 1) AS cover_image
                                        FROM `goods` g
                                        JOIN `user` u ON g.user_id = u.user_id
                                        JOIN `category` c ON g.category_id = c.category_id
@@ -78,7 +79,8 @@ namespace CampusSecondHand.API.Controllers
                                     updateTime = reader["update_time"],
                                     publisherName = reader["publisher_name"].ToString(),
                                     publisherPhone = reader["publisher_phone"] == DBNull.Value ? null : reader["publisher_phone"].ToString(),
-                                    categoryName = reader["category_name"].ToString()
+                                    categoryName = reader["category_name"].ToString(),
+                                    coverImage = reader["cover_image"] == DBNull.Value ? null : reader["cover_image"].ToString()
                                 });
                             }
                         }
