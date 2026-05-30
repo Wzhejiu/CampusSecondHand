@@ -11,53 +11,27 @@
       </el-input>
     </div>
 
-    <el-tabs v-model="activeTab" @tab-click="handleTabClick" class="goods-tabs">
-      <el-tab-pane label="已上架" name="online">
-        <el-table
-          :data="onlineGoods"
-          stripe
-          v-loading="loading"
-          style="width: 100%">
-          <el-table-column type="index" label="序号" width="60"></el-table-column>
-          <el-table-column prop="title" label="商品名称" show-overflow-tooltip min-width="150"></el-table-column>
-          <el-table-column prop="description" label="商品描述" show-overflow-tooltip min-width="200"></el-table-column>
-          <el-table-column prop="price" label="价格" width="100">
-            <template slot-scope="scope">
-              ¥{{ scope.row.price }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="categoryId" label="分类ID" width="100"></el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
-            <template slot-scope="scope">
-              <el-button size="mini" type="danger" @click="handleOffline(scope.row)">下架</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
-
-      <el-tab-pane label="已下架" name="offline">
-        <el-table
-          :data="offlineGoods"
-          stripe
-          v-loading="loading"
-          style="width: 100%">
-          <el-table-column type="index" label="序号" width="60"></el-table-column>
-          <el-table-column prop="title" label="商品名称" show-overflow-tooltip min-width="150"></el-table-column>
-          <el-table-column prop="description" label="商品描述" show-overflow-tooltip min-width="200"></el-table-column>
-          <el-table-column prop="price" label="价格" width="100">
-            <template slot-scope="scope">
-              ¥{{ scope.row.price }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="categoryId" label="分类ID" width="100"></el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
-            <template slot-scope="scope">
-              <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
-    </el-tabs>
+    <el-table
+      :data="onlineGoods"
+      stripe
+      v-loading="loading"
+      style="width: 100%">
+      <el-table-column type="index" label="序号" width="60"></el-table-column>
+      <el-table-column prop="title" label="商品名称" show-overflow-tooltip min-width="150"></el-table-column>
+      <el-table-column prop="description" label="商品描述" show-overflow-tooltip min-width="200"></el-table-column>
+      <el-table-column prop="price" label="价格" width="100">
+        <template slot-scope="scope">
+          ¥{{ scope.row.price }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="categoryId" label="分类ID" width="100"></el-table-column>
+      <el-table-column label="操作" width="220" fixed="right">
+        <template slot-scope="scope">
+          <el-button size="mini" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
     <div class="pagination">
       <el-pagination
@@ -69,22 +43,33 @@
         :total="total">
       </el-pagination>
     </div>
+
+    <!-- 商品编辑对话框 -->
+    <goods-edit-dialog
+      :visible.sync="editDialogVisible"
+      :goods-data="currentGoods"
+      @success="handleEditSuccess"></goods-edit-dialog>
   </div>
 </template>
 
 <script>
+import GoodsEditDialog from './GoodsEditDialog.vue';
+
 export default {
     name: "IdleGoods",
+    components: {
+        GoodsEditDialog
+    },
     data() {
         return {
             loading: false,
-            activeTab: 'online',
             currentPage: 1,
             pageSize: 10,
             total: 0,
             searchKeyword: '',
             onlineGoods: [],
-            offlineGoods: []
+            editDialogVisible: false,
+            currentGoods: null
         }
     },
     created() {
@@ -97,41 +82,16 @@ export default {
             const params = {
                 page: this.currentPage,
                 pageSize: this.pageSize,
-                keyword: this.searchKeyword || 'all'  // keyword是必填参数
+                keyword: this.searchKeyword || ''
             };
 
-            // 根据api.txt: /api/Goods 的参数是 categoryId, keyword, page, pageSize
-            // 已上架商品不需要额外参数
-            // 已下架商品通过 categoryId 或其他方式筛选
-            let apiPromise;
-
-            if (this.activeTab === 'online') {
-                apiPromise = this.$api.getGoods(params);
-            } else if (this.activeTab === 'offline') {
-                // 已下架商品使用 /api/Goods/my 接口，auditStatus=2 表示已下架
-                apiPromise = this.$api.getMyGoods({
-                    auditStatus: 2,
-                    page: this.currentPage,
-                    pageSize: this.pageSize
-                });
-            }
-
-            apiPromise.then(res => {
+            this.$api.getGoods(params).then(res => {
                 this.loading = false;
                 if (res.status_code === 1) {
-                    // 兼容不同的响应数据格式
                     const data = res.data || {};
                     const list = data.items || data.list || [];
                     this.total = data.total || data.count || 0;
-
-                    switch(this.activeTab) {
-                        case 'online':
-                            this.onlineGoods = list;
-                            break;
-                        case 'offline':
-                            this.offlineGoods = list;
-                            break;
-                    }
+                    this.onlineGoods = list;
                 } else {
                     this.$message.error(res.msg || '加载数据失败');
                 }
@@ -145,35 +105,20 @@ export default {
         // 搜索商品
         handleSearch() {
             this.currentPage = 1;
-            this.loading = true;
-            // 根据api.txt: /api/Goods 支持 keyword 参数搜索
-            this.$api.getGoods({
-                keyword: this.searchKeyword || undefined,
-                page: this.currentPage,
-                pageSize: this.pageSize
-            }).then(res => {
-                this.loading = false;
-                if (res.status_code === 1) {
-                    const data = res.data || {};
-                    const list = data.items || data.list || [];
-                    this.total = data.total || data.count || 0;
+            this.loadGoods();
+        },
 
-                    switch(this.activeTab) {
-                        case 'online':
-                            this.onlineGoods = list;
-                            break;
-                        case 'offline':
-                            this.offlineGoods = list;
-                            break;
-                    }
-                } else {
-                    this.$message.error(res.msg || '搜索失败');
-                }
-            }).catch(e => {
-                this.loading = false;
-                console.error(e);
-                this.$message.error('搜索失败，请稍后重试');
-            });
+        // 编辑商品
+        handleEdit(row) {
+            this.currentGoods = row;
+            this.editDialogVisible = true;
+        },
+
+        // 编辑成功回调
+        handleEditSuccess() {
+            this.editDialogVisible = false;
+            this.currentGoods = null;
+            this.loadGoods();
         },
 
         // 下架商品
@@ -202,13 +147,15 @@ export default {
 
         // 删除商品
         handleDelete(row) {
+            // 获取商品ID
+            const goodsId = row.id || row.goodsId || row._id;
             this.$confirm('确定要永久删除该商品吗？此操作不可恢复！', '警告', {
                 confirmButtonText: '确定删除',
                 cancelButtonText: '取消',
                 type: 'error'
             }).then(() => {
                 this.loading = true;
-                this.$api.deleteGoods(row.id).then(res => {
+                this.$api.deleteGoods(goodsId).then(res => {
                     this.loading = false;
                     if (res.status_code === 1) {
                         this.$message.success('删除成功');
@@ -222,13 +169,6 @@ export default {
                     this.$message.error('删除失败，请稍后重试');
                 });
             }).catch(() => {});
-        },
-
-        // 切换标签页
-        handleTabClick() {
-            this.currentPage = 1;
-            this.searchKeyword = '';
-            this.loadGoods();
         },
 
         // 分页变化

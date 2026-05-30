@@ -11,7 +11,7 @@
           </div>
           <div class="header-right">
             <div class="admin-info">
-              <el-avatar size="small" icon="el-icon-user-solid"></el-avatar>
+              <el-avatar size="small" :src="require('../../assets/gou.jpg')"></el-avatar>
               <span class="admin-name">{{admin.nickname}}</span>
             </div>
             <el-button type="danger" size="small" @click="logout">
@@ -37,15 +37,12 @@
               <i class="el-icon-goods"></i>
               <span slot="title">商品管理</span>
             </el-menu-item>
+
             <el-menu-item index="3">
-              <i class="el-icon-s-order"></i>
-              <span slot="title">订单管理</span>
-            </el-menu-item>
-            <el-menu-item index="4">
               <i class="el-icon-user"></i>
               <span slot="title">用户管理</span>
             </el-menu-item>
-            <el-menu-item index="5">
+            <el-menu-item index="4">
               <i class="el-icon-menu"></i>
               <span slot="title">分类管理</span>
             </el-menu-item>
@@ -54,9 +51,8 @@
         <el-main class="admin-main">
           <GoodsAudit v-if="mode == 1"></GoodsAudit>
           <IdleGoods v-if="mode == 2"></IdleGoods>
-          <OrderManage v-if="mode == 3"></OrderManage>
-          <UserManage v-if="mode == 4"></UserManage>
-          <CategoryManage v-if="mode == 5"></CategoryManage>
+          <UserManage v-if="mode == 3"></UserManage>
+          <CategoryManage v-if="mode == 4"></CategoryManage>
         </el-main>
       </el-container>
     </el-container>
@@ -66,7 +62,7 @@
 <script>
 import GoodsAudit from '../common/GoodsAudit.vue'
 import IdleGoods from '../common/IdleGoods.vue'
-import OrderManage from '../common/OrderManage.vue'
+
 import UserManage from '../common/UserManage.vue'
 import CategoryManage from '../common/CategoryManage.vue'
 
@@ -75,7 +71,6 @@ export default {
   components: {
     GoodsAudit,
     IdleGoods,
-    OrderManage,
     UserManage,
     CategoryManage,
   },

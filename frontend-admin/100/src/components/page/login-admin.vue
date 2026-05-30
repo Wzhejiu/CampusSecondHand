@@ -99,10 +99,10 @@
               </el-button>
             </div>
             <div class="other-submit">
-              <router-link to="/login" class="sign-in-text">
+              <a href="http://172.19.126.27:8080/login" class="sign-in-text" target="_blank">
                 <i class="el-icon-user"></i>
                 学生登录
-              </router-link>
+              </a>
             </div>
           </el-form>
         </div>

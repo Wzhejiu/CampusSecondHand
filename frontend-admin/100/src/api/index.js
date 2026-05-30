@@ -85,7 +85,21 @@ const api = {
             params: query
         });
     },
-
+    // 管理员更新商品
+    adminUpdateGoods(id, data) {
+        return request({
+            url: `/Admin/goods/${id}`,
+            method: 'put',
+            data: data
+        });
+    },
+    // 获取商品详情
+    getGoodsDetail(id) {
+        return request({
+            url: `/Goods/${id}`,
+            method: 'get'
+        });
+    },
     // ========== 订单管理 ==========
     // 获取订单列表
     getOrderList(query) {
