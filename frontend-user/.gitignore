@@ -1,0 +1,11 @@
+# 依赖目录（重点！）
+node_modules/
+
+# Vue 项目常见忽略项
+dist/
+build/
+*.log
+.env
+.env.local
+.DS_Store
+Thumbs.db
